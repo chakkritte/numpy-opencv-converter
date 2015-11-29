@@ -13,7 +13,23 @@
 // np_opencv_converter
 #include "np_opencv_converter.hpp"
 
+
+#include "opencv2/contrib/contrib.hpp"
+#include "opencv2/objdetect/objdetect.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <vector>
+#include <iomanip>
+#include <iostream>
+
+
 namespace py = boost::python;
+
+
+cv::Mat face_detection(const cv::Mat& in) {
+  std::cerr << "in: " << in << std::endl;
+  std::cerr << "sz: " << in.size() << std::endl;
+  return in.clone();
+}
 
 cv::Mat test_np_mat(const cv::Mat& in) {
   std::cerr << "in: " << in << std::endl;
@@ -64,6 +80,9 @@ BOOST_PYTHON_MODULE(np_opencv_module)
   // Basic test
   py::def("test_np_mat", &test_np_mat);
 
+  py::def("face_detection", &face_detection);
+
+
   // With arguments
   py::def("test_with_args", &test_with_args,
           (py::arg("src"), py::arg("var1")=1, py::arg("var2")=10.0, py::arg("name")="test_name"));
@@ -79,6 +98,5 @@ BOOST_PYTHON_MODULE(np_opencv_module)
 
 } // namespace fs
 } // namespace python
-
 
 
