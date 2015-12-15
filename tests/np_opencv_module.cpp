@@ -60,48 +60,53 @@ py::list toPythonList(std::vector<T> vector) {
 }
 
 
-py::list face_detection(const cv::Mat& in, const string cascadeName, const string cascadeNameGPU,const bool useGPU) {
-    
+CascadeClassifier_GPU cascade_gpu;
+
+/* parameters 
+double scaleFactor = 1.0;
+bool findLargestObject = false;
+bool filterRects = true;
+bool helpScreen = false;
+*/
+int detections_num;
+
+void setcascade(const string cascadeNameGPU){
+	    if (!cascade_gpu.load(cascadeNameGPU)){
+		cerr << "ERROR: Could not load cascade classifier "" << cascadeNameGPU << """ << endl;
+	    }
+}
+
+py::list face_detection(const cv::Mat& in,const bool useGPU=true,const bool filterRects=true,const bool findLargestObject=false,const double scaleFactor=1.0) {
+   
+    /*
     if (getCudaEnabledDeviceCount() == 0){
         cerr << "No GPU found or the library is compiled without GPU support" << endl;
     }
     
     cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
+    */
     
-    
-    CascadeClassifier_GPU cascade_gpu;
-    if (!cascade_gpu.load(cascadeNameGPU)){
-        cerr << "ERROR: Could not load cascade classifier "" << cascadeNameGPU << """ << endl;
-    }
-    
-    
+    /*
     CascadeClassifier cascade_cpu;
     if (!cascade_cpu.load(cascadeName)){
         cerr << "ERROR: Could not load cascade classifier "" << cascadeName << """ << endl;
     }
-    
+    */
     
     Mat frame, frame_cpu, gray_cpu, resized_cpu, faces_downloaded, frameDisp;
-    vector<Rect> facesBuf_cpu;
+    //vector<Rect> facesBuf_cpu;
     GpuMat frame_gpu, gray_gpu, resized_gpu, facesBuf_gpu;
     
-    vector<Rect> face_rects ;
+    //vector<Rect> face_rects ;
     
-    /* parameters */
-    //bool useGPU = false;
-    double scaleFactor = 1.0;
-    bool findLargestObject = false;
-    bool filterRects = true;
-    bool helpScreen = false;
-    int detections_num;
     
-    in.copyTo(frame_cpu);
+    //in.copyTo(frame_cpu);
     frame_gpu.upload(in);
-    convertAndResize(frame_gpu, gray_gpu, resized_gpu, scaleFactor);
+    //convertAndResize(frame_gpu, gray_gpu, resized_gpu, scaleFactor);
     convertAndResize(frame_gpu, gray_gpu, resized_gpu, scaleFactor);
     
-    TickMeter tm;
-    tm.start();
+    //TickMeter tm;
+    //tm.start();
     
     if (useGPU){
         //cascade_gpu.visualizeInPlace = true;
@@ -111,6 +116,7 @@ py::list face_detection(const cv::Mat& in, const string cascadeName, const strin
         (filterRects || findLargestObject) ? 4 : 0);
         facesBuf_gpu.colRange(0, detections_num).download(faces_downloaded);
     }
+/*
     else
     {
         Size minSize = cascade_gpu.getClassifierSize();
@@ -121,6 +127,9 @@ py::list face_detection(const cv::Mat& in, const string cascadeName, const strin
         minSize);
         detections_num = (int)facesBuf_cpu.size();
     }
+*/
+
+/*
     
     tm.stop();
     double detectionTime = tm.getTimeMilli();
@@ -128,11 +137,12 @@ py::list face_detection(const cv::Mat& in, const string cascadeName, const strin
     //print detections to console
     cout << setfill(' ') << setprecision(2);
     cout << setw(6) << fixed << fps << " FPS, " << detections_num << " det";
-    
+*/    
     
     py::list facereturn;
-    Rect *faces = useGPU ? faces_downloaded.ptr<Rect>() : &facesBuf_cpu[0];
-    //Rect* faces = faces_downloaded.ptr<cv::Rect>();
+    //Rect *faces = useGPU ? faces_downloaded.ptr<Rect>() : &facesBuf_cpu[0];
+    Rect* faces = faces_downloaded.ptr<cv::Rect>();
+
     for (int i = 0; i < detections_num; ++i)
     {
         py::list points;
@@ -141,11 +151,10 @@ py::list face_detection(const cv::Mat& in, const string cascadeName, const strin
         points.append(faces[i].width);
         points.append(faces[i].height);
         facereturn.append(points);
-        face_rects.push_back(faces[i]);
+        //face_rects.push_back(faces[i]);
     }
     
-    
-    std::cerr << "detections_num: " << detections_num << std::endl;
+    //std::cerr << "detections_num: " << detections_num << std::endl;
     //std::cerr << "sz: " << in.size() << std::endl;
     return facereturn;
 }
@@ -201,7 +210,9 @@ namespace fs { namespace python {
             py::def("test_np_mat", &test_np_mat);
             
             py::def("face_detection", &face_detection);
-            
+
+	    py::def("setcascade", &setcascade);
+
             
             // With arguments
             py::def("test_with_args", &test_with_args,
