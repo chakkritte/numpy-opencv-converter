@@ -120,5 +120,5 @@ assume you know how to deal with pkg-config and opencv to make any
 modifications to the CMakeLists.txt file. 
 
 ```
-$ sudo apt-get install libboost-python-dev libopencv-dev
+$ sudo apt-get install libboost-python-dev libopencv-dev libboost1.54-all-dev
 ```
